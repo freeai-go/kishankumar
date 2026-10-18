@@ -1,0 +1,162 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Text & Emoji Repeater</title>
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;min-height:100vh;padding:22px;
+  font-family:Arial,sans-serif;
+  background:linear-gradient(135deg,#101827,#202d46);
+  color:#f8fafc;display:flex;justify-content:center;
+}
+.app{width:100%;max-width:650px}
+h1{text-align:center;font-size:28px}
+.sub{text-align:center;color:#b8c4d8;margin-bottom:25px}
+.card{
+  background:#ffffff0d;border:1px solid #ffffff20;
+  padding:20px;border-radius:18px;margin-bottom:16px;
+}
+label{display:block;margin:14px 0 8px;font-weight:bold}
+textarea,input{
+  width:100%;padding:13px;border-radius:10px;
+  border:1px solid #526078;background:#101827;
+  color:white;font-size:16px;outline:none;
+}
+textarea{resize:vertical;min-height:100px}
+button{
+  padding:13px 15px;border:0;border-radius:10px;
+  font-size:15px;font-weight:bold;cursor:pointer;
+}
+.primary{background:#7c6cff;color:white;width:100%;margin-top:16px}
+.secondary{background:#26354e;color:white}
+.actions{display:flex;gap:10px;margin-top:12px}
+.actions button{flex:1}
+.stats{display:flex;justify-content:space-between;gap:10px;
+  color:#c6d1e2;font-size:13px;flex-wrap:wrap;margin-top:12px}
+#status{min-height:20px;color:#a9f5cb;margin-top:12px}
+.note{font-size:13px;color:#b8c4d8;line-height:1.5}
+footer{text-align:center;color:#91a0b7;font-size:12px;margin-top:20px}
+</style>
+</head>
+<body>
+<main class="app">
+  <h1>🔁 Text & Emoji Repeater</h1>
+  <p class="sub">Repeat anything. Copy everything.</p>
+
+  <section class="card">
+    <label for="source">Enter text or emojis</label>
+    <textarea id="source" placeholder="😂 Hello ❤️ 🔥"></textarea>
+
+    <label for="quantity">Repeat quantity</label>
+    <input id="quantity" type="number" min="1" max="100000"
+      value="100" inputmode="numeric">
+
+    <label for="separator">Between each repeat</label>
+    <select id="separator" style="width:100%;padding:12px;border-radius:10px;background:#101827;color:white;border:1px solid #526078">
+      <option value="">No space</option>
+      <option value=" ">Space</option>
+      <option value="\n">New line</option>
+    </select>
+
+    <button class="primary" id="repeatBtn">✨ Generate Repeated Text</button>
+    <p class="note">Maximum 100,000 repeats. Very large outputs may use significant memory.</p>
+  </section>
+
+  <section class="card">
+    <label for="output">Generated result</label>
+    <textarea id="output" placeholder="Your repeated text will appear here..."
+      readonly></textarea>
+
+    <div class="stats">
+      <span>Repeats: <b id="repeats">0</b></span>
+      <span>Characters: <b id="chars">0</b></span>
+      <span>Size: <b id="size">0 KB</b></span>
+    </div>
+
+    <div class="actions">
+      <button class="secondary" id="copyBtn">📋 Copy All</button>
+      <button class="secondary" id="clearBtn">🗑️ Clear</button>
+    </div>
+    <p id="status" role="status"></p>
+  </section>
+  <footer>Text & Emoji Repeater · Free browser tool</footer>
+</main>
+
+<script>
+const source = document.getElementById('source');
+const quantity = document.getElementById('quantity');
+const separator = document.getElementById('separator');
+const output = document.getElementById('output');
+const status = document.getElementById('status');
+const repeatBtn = document.getElementById('repeatBtn');
+
+function generate() {
+  const text = source.value;
+  const count = Number(quantity.value);
+
+  if (!text) {
+    status.textContent = 'Please enter some text or emojis.';
+    source.focus();
+    return;
+  }
+  if (!Number.isInteger(count) || count < 1 || count > 100000) {
+    status.textContent = 'Enter a whole number between 1 and 100000.';
+    return;
+  }
+
+  const sep = separator.value === '\\n' ? '\n' : separator.value;
+  const totalLength = text.length * count + sep.length * (count - 1);
+
+  // Prevent accidentally creating enormous strings in the browser.
+  if (totalLength > 5000000) {
+    status.textContent =
+      'Output is too large for safe preview. Reduce quantity or text length.';
+    return;
+  }
+
+  output.value = Array(count).fill(text).join(sep);
+  document.getElementById('repeats').textContent =
+    count.toLocaleString();
+  document.getElementById('chars').textContent =
+    output.value.length.toLocaleString();
+  document.getElementById('size').textContent =
+    (new Blob([output.value]).size / 1024).toFixed(2) + ' KB';
+  status.textContent = 'Done! Your repeated text is ready.';
+}
+
+repeatBtn.addEventListener('click', generate);
+
+document.getElementById('copyBtn').addEventListener('click', async () => {
+  if (!output.value) {
+    status.textContent = 'Generate some text first.';
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(output.value);
+    status.textContent = '✅ Copied successfully!';
+  } catch (error) {
+    output.focus();
+    output.select();
+    const copied = document.execCommand('copy');
+    status.textContent = copied
+      ? '✅ Copied successfully!'
+      : 'Select the text and copy it manually.';
+  }
+});
+
+document.getElementById('clearBtn').addEventListener('click', () => {
+  source.value = '';
+  output.value = '';
+  quantity.value = '100';
+  document.getElementById('repeats').textContent = '0';
+  document.getElementById('chars').textContent = '0';
+  document.getElementById('size').textContent = '0 KB';
+  status.textContent = '';
+});
+</script>
+</body>
+</html>
